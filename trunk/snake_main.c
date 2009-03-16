@@ -44,7 +44,7 @@ int put_pixel (int x, int y, int *color);
 
 /* Written using keyboard adapter */
 int getch();
-void init_keyboard();
+int init_keyboard();
 
 
 void gamephysics ()
@@ -330,7 +330,7 @@ int main ()
 
 {
  initwindow(1018, 736,"Snake 1.0"); // Create the Snake Window with value is optimize for mode 1024 * 768
- init_keyboard();
+ int error = init_keyboard();
  initgamedata ();
  initscreen ();
  gameengine (); 
