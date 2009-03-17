@@ -1,0 +1,8 @@
+Project Changelog
+
+Mar 16, 2009
+James: wrote randomvalue.s, getch.s, keyboard_init.s
+
+Mar 13, 2009
+- James: found snake_main.c online
+- Mike:

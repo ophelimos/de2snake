@@ -56,9 +56,9 @@ randomvalue:
         bgt r2, r4, check_ceil
         /* We have a floor condition */
         /* Find the remainder */
-        div r8, r2, r4 ; The original div operation
+        div r8, r2, r4 
         mul r10, r8, r4
-        sub r10, r2, r10 ; r10 = remainder
+        sub r10, r2, r10 /* r10 = remainder */
         /* Subtract the remainder from the ceiling */
         sub r2, r4, r10
 
@@ -66,9 +66,9 @@ check_ceil:
         blt r2, r5, end
         /* We have a ceiling condition */
         /* Find the remainder */
-        div r8, r2, r5 ; The original div operation
+        div r8, r2, r5 
         mul r10, r8, r5
-        sub r10, r2, r10 ; r10 = remainder
+        sub r10, r2, r10 /* r10 = remainder */
         /* Add the remainder to the floor */
         add r2, r5, r10
 

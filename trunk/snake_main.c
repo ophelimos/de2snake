@@ -39,8 +39,9 @@ Snake_Data Snake;
 int randomvalue (int starting, int ending); // Return a random int value between end and starting parameters
 
 /* Written using VGA adapter */
-int get_pixel (int x, int y, int color);
-int put_pixel (int x, int y, int *color);
+int get_pixel (int x, int y);
+int put_pixel (int x, int y, int color);
+void init_vga();
 
 /* Written using keyboard adapter */
 int getch();
@@ -75,8 +76,9 @@ void gamephysics ()
   
   if (Snake.head_x <= 10 || Snake.head_x >= 1008 || Snake.head_y <= 10 || Snake.head_y >= 700)
     {
-     outtextxy (499,345, "Game Over");     
-     delay (3000);
+        /* TODO: write text on screen */
+        /* outtextxy (499,345, "Game Over");     */
+        /* delay (3000); */
      exit (1); 
     }
  
@@ -108,12 +110,12 @@ void gamephysics ()
     {
        foodcount --; //Reduce count
        score++; //Increase Score
-       setcolor (0);//Rewrite Score 
-       setfillstyle (0,0);
+       /* setcolor (0);//Rewrite Score 
+        setfillstyle (0,0); 
        bar (11,701,1007, 735);
-       setcolor (4);
-       sprintf (scorestring, "Score : %d", score);
-       outtextxy (20,710, scorestring);
+       setcolor (4); */
+/*       sprintf (scorestring, "Score : %d", score); */
+       /* outtextxy (20,710, scorestring); */
       //Increase the size of snake by 100 pixel you can put as much as you want
       if (Snake.tail_dir == UP)
        {
@@ -145,8 +147,9 @@ void gamephysics ()
     }
    if (futurepixel == 15)
      {
-     outtextxy (499,345, "Game Over");     
-     delay (3000);
+         /* TODO: */
+/*     outtextxy (499,345, "Game Over");     
+       delay (3000); */
      exit (1); 
     }
 
@@ -160,10 +163,9 @@ void userinput () //Process User Input and maps it into game
      if ( i > 1000) i = 0; // Makes the bend array a circular queue
      static int j = 0;
      if ( j > 1000) j = 0;
-     char input;
-     if (kbhit ())
+     char input = getch();
+     if (input != 0)
      {
-       input = getch ();
        
        //Change Respective Return value to our MACRO Direction Code Value 
        
@@ -279,7 +281,7 @@ void gameengine ()//Soul of our game.
        movesnake ();
        userinput ();
        gamephysics ();
-       delay (5);
+/*        delay (5); */
      }
 
 }
@@ -287,20 +289,14 @@ void initscreen ( ) //Draws Intial Screen.
 {
      int i;
      char scorestring [100];
-     //Draw Boundary
-     setcolor (4);
-     line (10,10,10,700);
-     line (1008,10,1008,700);
-     line (10,700,1008,700);
-     line (10,10,1008,10);
-     //Write Score on scree
-     sprintf (scorestring, "Score : %d", score);
-     outtextxy (20,710, scorestring);
-     //Draw Intial Snake Body 
-     for (int i = Snake.length; i>0;i--) //This part should be redesigned for change of code of intial values   
+     //Write Score on screen
+/*     sprintf (scorestring, "Score : %d", score); */
+     /* TODO: Score/text writing function */
+     /* outtextxy (20,710, scorestring); */
+     //Draw Intial Snake Body
+     for (i = Snake.length; i>0;i--) //This part should be redesigned for change of code of initial values   
      {
       put_pixel (Snake.head_x-i,Snake.head_y,15);     
-      
      }
  }
 
@@ -314,23 +310,21 @@ void initgamedata ( ) //Snakes starting coordinate if you modify any one make su
   Snake.tail_x = Snake.head_x- Snake.length;
   Snake.tail_y = Snake.head_y;
   Snake.tail_dir = Snake.head_dir;
-  for (int i = 0; i <1000;i++) // There is no bend initally
+  for (i = 0; i <1000;i++) // There is no bend initally
    {
         Snake.bend_x[i] = 0;
         Snake.bend_dir[i] = 0; 
    }
   score = 0;
-  gamedelay = 1000; // Should be change according to game speed need. 
- 
+  /* init_timer(delay) */
 }
 
 // Main Function
 
 int main ()
-
 {
- initwindow(1018, 736,"Snake 1.0"); // Create the Snake Window with value is optimize for mode 1024 * 768
  int error = init_keyboard();
+ init_vga();
  initgamedata ();
  initscreen ();
  gameengine (); 
