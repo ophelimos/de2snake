@@ -47,6 +47,40 @@
 KEYBOARD_INT:   
         .byte 0x0
         .global KEYBOARD_INT
+
+        /* Exceptions section */
+
+        .section .exceptions, "ax"
+        .equ INTERRUPT_STACK, 12
+        
+exception_handler:
+        /* Save *all* used registers to the stack */
+        /* r8 = ipending */
+        /* r9 = masked answer */
+        /* r10 = KEYBOARD_INT */
+        subi sp, sp, INTERRUPT_STACK
+        stw r8, 0(sp)
+        stw r9, 4(sp)
+        stw r10, 8(sp)
+        
+        /* Find out what device caused the interrupt */
+        rdctl r8, ctl4
+        /* Check keyboard first (IRQ11) */
+        andi r9, r8, 0x800
+        beq r9, r0, end_exc
+        /* Send back the signal */
+        movia r10, KEYBOARD_INT
+        movi r8, 0x1
+        stb r8, 0(r10)
+        
+end_exc:
+        /* Restore registers */
+        ldw r8, 0(sp)
+        ldw r9, 4(sp)
+        ldw r10, 8(sp)
+        addi sp, sp, INTERRUPT_STACK
+        subi ea, ea, 4
+        eret
         
         .text
         .global init_keyboard
@@ -78,6 +112,8 @@ wait_self_test:
         /* Wait for the interrupt to fire */
         ldb r8, 0(r10)
         beq r8, r0, wait_self_test
+        /* Clear the interrupt flag */
+        stb r0, 0(r10)
         /* Check if the response is correct */
         ldwio r8, 0(r9)
         andi r8, 0xFF
@@ -94,6 +130,8 @@ ack_init_leds1:
         /* Wait for the interrupt to fire */
         ldb r8, 0(r10)
         beq r8, r0, ack_init_leds1
+        /* Clear the interrupt flag */
+        stb r0, 0(r10)
         /* Check if the response is correct */
         ldwio r8, 0(r9)
         andi r8, 0xFF
@@ -110,6 +148,8 @@ ack_init_leds2:
         /* Wait for the interrupt to fire */
         ldb r8, 0(r10)
         beq r8, r0, ack_init_leds2
+        /* Clear the interrupt flag */
+        stb r0, 0(r10)
         /* Check if the response is correct */
         ldwio r8, 0(r9)
         andi r8, 0xFF

@@ -63,6 +63,8 @@ getch:
         ret
 
 have_key:
+        /* Clear the interrupt flag */
+        stb r0, 0(r10)
         /* Read the byte */
         ldwio r11, 0(r9)
         /* Check for errors */
@@ -74,7 +76,34 @@ have_key:
         ret
 
 no_errors:
+        /* Start with 0 as the return character */
+        movi r2, 0
         /* Mask the byte */
         andi r11, 0xFF
         /* Check if it's an extended key */
+        bne r11, r12, not_extended
+        andi r2, r11, 0xFF
+        /* Get the next character */
+        ldwio r11, 0(r9)
+        /* Mask the byte */
+        andi r11, 0xFF
+
+not_extended:
+        /* Check if this is a break character */
+        bne r11, r13, not_break
+        /* Shift whatever's there left two bits*/
+        slli r2, r2, 2
+        /* Add the new byte */
+        add r2, r2, r11
+        /* Get the next character */
+        ldwio r11, 0(r9)
+        /* Mask the byte */
+        andi r11, 0xFF
+
+not_break:
+        /* Shift whatever's there left two bits*/
+        slli r2, r2, 2
+        /* Add the new byte */
+        add r2, r2, r11
+        ret
         
