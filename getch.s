@@ -41,7 +41,7 @@
 	*/
         
         .equ PS2ADDR, 0xff1150
-        .equ EXTENDED_KEY, 0xEO
+        .equ EXTENDED_KEY, 0xE0
         .equ BREAK_CODE, 0xF0
 
         .text
@@ -56,8 +56,8 @@ getch:
         movi r13, BREAK_CODE
 
         /* Check if the keyboard has interrupted */
-        ldwio r8, 0(r10)
-        bne r8, r0, have_key
+        ldb r11, 0(r10)
+        bne r11, r0, have_key
         /* Otherwise, return 0 */
         movi r2, 0
         ret
@@ -65,11 +65,9 @@ getch:
 have_key:
         /* Clear the interrupt flag */
         stb r0, 0(r10)
-        /* Read the byte */
-        ldwio r11, 0(r9)
         /* Check for errors */
         ldwio r8, 4(r9)
-        andi r8, 0x400
+        andi r8, r8, 0x400
         beq r8, r0, no_errors
         /* Otherwise, return -1 */
         movi r2, -1
@@ -79,14 +77,12 @@ no_errors:
         /* Start with 0 as the return character */
         movi r2, 0
         /* Mask the byte */
-        andi r11, 0xFF
+        andi r11, r11, 0xFF
         /* Check if it's an extended key */
         bne r11, r12, not_extended
         andi r2, r11, 0xFF
         /* Get the next character */
-        ldwio r11, 0(r9)
-        /* Mask the byte */
-        andi r11, 0xFF
+        ldbio r11, 0(r9)
 
 not_extended:
         /* Check if this is a break character */
@@ -96,9 +92,7 @@ not_extended:
         /* Add the new byte */
         add r2, r2, r11
         /* Get the next character */
-        ldwio r11, 0(r9)
-        /* Mask the byte */
-        andi r11, 0xFF
+        ldbio r11, 0(r9)
 
 not_break:
         /* Shift whatever's there left two bits*/

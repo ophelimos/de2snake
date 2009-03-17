@@ -6,9 +6,9 @@
 	r1 at
 	r2 Return value 1
 	r3 Return value 2
-	r4 Arg 1 = Array Address
-	r5 Arg 2 = Array length
-	r6 Arg 3 = Character to delete from array
+	r4 Arg 1
+	r5 Arg 2
+	r6 Arg 3
 	r7 Arg 4
 
 	* Can get trampled *
@@ -55,8 +55,8 @@ KEYBOARD_INT:
         
 exception_handler:
         /* Save *all* used registers to the stack */
-        /* r8 = ipending */
-        /* r9 = masked answer */
+        /* r8 = ipending/temp */
+        /* r9 = masked answer/temp */
         /* r10 = KEYBOARD_INT */
         subi sp, sp, INTERRUPT_STACK
         stw r8, 0(sp)
@@ -68,9 +68,11 @@ exception_handler:
         /* Check keyboard first (IRQ11) */
         andi r9, r8, 0x800
         beq r9, r0, end_exc
-        /* Send back the signal */
+        /* Load the data (acknowledging the interrupt) */
+        movia r9, PS2ADDR
+        ldwio r8, 0(r9)
+        andi r8, r8, 0xFF
         movia r10, KEYBOARD_INT
-        movi r8, 0x1
         stb r8, 0(r10)
         
 end_exc:
@@ -98,7 +100,7 @@ init_keyboard:
         stwio r8, 4(r9)
         /* IRQ 11 */
         rdctl r8, ctl3
-        ori r8, 0x400
+        ori r8, r8, 0x800
         wrctl ctl3, r8
         /* Globally */
         movi r8, 0x1
@@ -111,13 +113,13 @@ init_keyboard:
 wait_self_test:
         /* Wait for the interrupt to fire */
         ldb r8, 0(r10)
-        beq r8, r0, wait_self_test
-        /* Clear the interrupt flag */
+        beq r8, r0, wait_self_test 
+        /* Load the response */
+        ldb r8, 0(r10)
+        /* Clear the response */
         stb r0, 0(r10)
         /* Check if the response is correct */
-        ldwio r8, 0(r9)
-        andi r8, 0xFF
-        beq r8, r11, passed_self_test
+        beq r8, r12, passed_self_test
         /* Otherwise, return -1 */
         movi r2, -1
         ret
@@ -130,29 +132,29 @@ ack_init_leds1:
         /* Wait for the interrupt to fire */
         ldb r8, 0(r10)
         beq r8, r0, ack_init_leds1
-        /* Clear the interrupt flag */
+        /* Load the response */
+        ldb r8, 0(r10)
+        /* Clear the response */
         stb r0, 0(r10)
         /* Check if the response is correct */
-        ldwio r8, 0(r9)
-        andi r8, 0xFF
         beq r8, r12, passed_init_leds1
         /* Otherwise, return -1 */
         movi r2, -1
         ret
 
 passed_init_leds1:
-        /* Turn off all LEDS */
-        movi r8, 0x00
+        /* Turn on num lock LED */
+        movi r8, 0x02
         stwio r8, 0(r9)
 ack_init_leds2: 
         /* Wait for the interrupt to fire */
         ldb r8, 0(r10)
         beq r8, r0, ack_init_leds2
-        /* Clear the interrupt flag */
+        /* Load the response */
+        ldb r8, 0(r10)
+        /* Clear the response */
         stb r0, 0(r10)
-        /* Check if the response is correct */
-        ldwio r8, 0(r9)
-        andi r8, 0xFF
+        /* Check if the response is correct */        
         beq r8, r12, passed_init_leds2
         /* Otherwise, return -1 */
         movi r2, -1
