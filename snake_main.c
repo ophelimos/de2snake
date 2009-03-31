@@ -33,6 +33,18 @@ int bend_dir [MAX_X]; // Stores Bend direction when tail reaches that X Coordina
 /* Declare a global Snake_Data structure */
 Snake_Data Snake;
 
+/* Global keyboard interrupt flag */
+extern int KEYBOARD_INT;
+
+/* Global timer interrupt flag */
+extern int TIMER_INT;
+
+/* Timer parameters */
+#define TIMER0_ADDR 0xff1020
+#define TIMER1_ADDR 0xff1040
+
+#define MOVE_PERIOD 0x5F5E100 /* 100 000 000 */
+
 /* Functions we need to write */
 
 /* Written using RNG */
@@ -47,6 +59,8 @@ void init_vga();
 int getch();
 int init_keyboard();
 
+/* Written using timer */
+void init_timer(int address, int period);
 
 void gamephysics ()
 {
@@ -279,13 +293,17 @@ void gameengine ()//Soul of our game.
   while (1)     
      {
        movesnake ();
-       userinput ();
+       if (KEYBOARD_INT != 0)
+       {
+           /* A key's been pressed */
+           KEYBOARD_INT = 0;
+           userinput ();
+       }
        gamephysics ();
-/*        delay (5); */
      }
 
 }
-void initscreen ( ) //Draws Intial Screen.
+void initscreen ( ) //Draws Initial Screen.
 {
      int i;
      char scorestring [100];
@@ -307,7 +325,7 @@ void initgamedata ( ) //Snakes starting coordinate if you modify any one make su
   Snake.head_x = 200;
   Snake.head_y = 200;
   Snake.head_dir = RIGHT;
-  Snake.tail_x = Snake.head_x- Snake.length;
+  Snake.tail_x = Snake.head_x - Snake.length;
   Snake.tail_y = Snake.head_y;
   Snake.tail_dir = Snake.head_dir;
   for (i = 0; i <1000;i++) // There is no bend initally
@@ -316,7 +334,6 @@ void initgamedata ( ) //Snakes starting coordinate if you modify any one make su
         Snake.bend_dir[i] = 0; 
    }
   score = 0;
-  /* init_timer(delay) */
 }
 
 // Main Function
@@ -327,6 +344,7 @@ int main ()
  init_vga();
  initgamedata ();
  initscreen ();
+ init_timer(TIMER0_ADDR, MOVE_PERIOD);
  gameengine (); 
  return 0;
 }

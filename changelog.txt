@@ -1,5 +1,8 @@
 Project Changelog
 
+Mar 30, 2009
+James: wrote init_timer.s, modified init_keyboard.s to include interrupts, added checks to snake_main.c
+
 Mar 16, 2009
 James: wrote randomvalue.s, getch.s, keyboard_init.s
 
