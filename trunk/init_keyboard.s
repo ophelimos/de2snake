@@ -44,15 +44,15 @@
         .equ PS2ADDR, 0xff1150
         .equ TIMER0_ADDR, 0xff1020
 
-        /* Make a global variables that will act as interrupt flags */
-KEYBOARD_INT:   
+        /* Make global variables that will act as interrupt flags */
+/*KEYBOARD_INT:   
         .byte 0x0
         .global KEYBOARD_INT
 
 TIMER_INT:   
         .byte 0x0
         .global TIMER_INT
-
+*/
         /* Exceptions section */
 
         .section .exceptions, "ax"

@@ -45,6 +45,9 @@
         .equ PERIOD, 0x5F5E100 /* 100 000 000 */
         .equ TIMER_START, 0x7 /* start, cont, interrupts on */
 
+        .text
+        .global init_timer
+
 init_timer:
         /* Clock init */
         /* Set up the clock period */
@@ -64,7 +67,7 @@ timer0: /* line 3 */
         rdctl r8, ctl3
         ori r8, r8, 0x8
         wrctl ctl3, r8
-        br end
+#        br end
 #timer1: /* line 4 */
 #        rdctl r8, ctl3
 #        ori r8, r8, 0x10
