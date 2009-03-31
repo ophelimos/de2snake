@@ -42,44 +42,64 @@
 	*/
         
         .equ PS2ADDR, 0xff1150
+        .equ TIMER0_ADDR, 0xff1020
 
-        /* Make a global variable that will be modified by a keyboard interrupt */
+        /* Make a global variables that will act as interrupt flags */
 KEYBOARD_INT:   
         .byte 0x0
         .global KEYBOARD_INT
 
+TIMER_INT:   
+        .byte 0x0
+        .global TIMER_INT
+
         /* Exceptions section */
 
         .section .exceptions, "ax"
-        .equ INTERRUPT_STACK, 12
+        .equ INTERRUPT_STACK, 16
         
 exception_handler:
         /* Save *all* used registers to the stack */
-        /* r8 = ipending/temp */
+        /* r8 = ipending */
         /* r9 = masked answer/temp */
-        /* r10 = KEYBOARD_INT */
+        /* r10 = flag address */
+        /* r11 = device address */
         subi sp, sp, INTERRUPT_STACK
         stw r8, 0(sp)
         stw r9, 4(sp)
         stw r10, 8(sp)
+        stw r11, 12(sp)
         
         /* Find out what device caused the interrupt */
         rdctl r8, ctl4
         /* Check keyboard first (IRQ11) */
         andi r9, r8, 0x800
-        beq r9, r0, end_exc
+        beq r9, r0, check_timer0
         /* Load the data (acknowledging the interrupt) */
-        movia r9, PS2ADDR
-        ldwio r8, 0(r9)
-        andi r8, r8, 0xFF
+        movia r11, PS2ADDR
+        ldwio r9, 0(r11)
+        andi r9, r9, 0xFF
         movia r10, KEYBOARD_INT
-        stb r8, 0(r10)
+        stb r9, 0(r10)
+        
+check_timer0:   
+        /* Check timer0 (IRQ3)*/
+        andi r9, r8, 0x8
+        beq r9, r0, end_exc
+        /* Acknowledge the interrupt (by clearing the timer) */
+        movia r11, TIMER0_ADDR
+        stwio r0, 0(r11)
+        /* Set the flag */
+        movia r10, TIMER_INT
+        movi r9, 0x1
+        stb r9, 0(r10)
         
 end_exc:
         /* Restore registers */
         ldw r8, 0(sp)
         ldw r9, 4(sp)
         ldw r10, 8(sp)
+        ldw r11, 12(sp)
         addi sp, sp, INTERRUPT_STACK
         subi ea, ea, 4
         eret
