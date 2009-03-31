@@ -14,7 +14,7 @@
 	r8 Temp
 	r9 ADDR_RNG
 	r10 Remainder
-	r11 
+	r11 Range
 	r12 
 	r13 
 	r14 
@@ -42,6 +42,7 @@
 
         .global randomvalue
         .equ ADDR_RNG, 0xff11a0
+	.equ SIGN_MASK, 0x7fffffff
 
         .text
 
@@ -52,25 +53,40 @@ randomvalue:
         /* Get the random number */
         ldwio r2, 0(r9)
 
+	/* Clear the sign bit */
+	movia r8, SIGN_MASK
+	and r2, r2, r8
+
         /* Check floor/ceiling */
         bgt r2, r4, check_ceil
+check_floor:            
         /* We have a floor condition */
-        /* Find the remainder */
-        div r8, r2, r4 
-        mul r10, r8, r4
+
+	/* Calculate the range of entry */
+	sub r11, r5, r4
+
+        /* Find the remainder with the range */ 
+	/* n = qd + r, therefore r = n - qd */
+        div r8, r11, r2 
+        mul r10, r8, r2
         sub r10, r2, r10 /* r10 = remainder */
         /* Subtract the remainder from the ceiling */
-        sub r2, r4, r10
+        sub r2, r5, r10
+	br end
 
 check_ceil:
         blt r2, r5, end
+
+	/* Calculate the range of entry */
+	sub r11, r5, r4
+
         /* We have a ceiling condition */
         /* Find the remainder */
-        div r8, r2, r5 
-        mul r10, r8, r5
+        div r8, r2, r11 
+        mul r10, r8, r11
         sub r10, r2, r10 /* r10 = remainder */
         /* Add the remainder to the floor */
-        add r2, r5, r10
+        add r2, r4, r10
 
 end:    
         ret
