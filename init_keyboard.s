@@ -43,6 +43,8 @@
         
         .equ PS2ADDR, 0xff1150
         .equ TIMER0_ADDR, 0xff1020
+        .equ AUDIO_ADDR, 0xff1160
+        .equ AUDIO_DISABLE, 0x8 /* 1000 */ /* Disable interrupts, clear write FIFO's */
 
         /* Make global variables that will act as interrupt flags */
 /*KEYBOARD_INT:   
@@ -56,7 +58,7 @@ TIMER_INT:
         /* Exceptions section */
 
         .section .exceptions, "ax"
-        .equ INTERRUPT_STACK, 16
+        .equ INTERRUPT_STACK, 28
         
 exception_handler:
         /* Save *all* used registers to the stack */
@@ -64,11 +66,15 @@ exception_handler:
         /* r9 = masked answer/temp */
         /* r10 = flag address */
         /* r11 = device address */
+        /* r12 = audio device address */
         subi sp, sp, INTERRUPT_STACK
         stw r8, 0(sp)
         stw r9, 4(sp)
         stw r10, 8(sp)
         stw r11, 12(sp)
+        stw r12, 16(sp)
+        stw r13, 20(sp)
+        stw r14, 24(sp)
         
         /* Find out what device caused the interrupt */
         rdctl r8, ctl4
@@ -85,7 +91,7 @@ exception_handler:
 check_timer0:   
         /* Check timer0 (IRQ3)*/
         andi r9, r8, 0x8
-        beq r9, r0, end_exc
+        beq r9, r0, check_audio
         /* Acknowledge the interrupt (by clearing the timer) */
         movia r11, TIMER0_ADDR
         stwio r0, 0(r11)
@@ -93,6 +99,66 @@ check_timer0:
         movia r10, TIMER_INT
         movi r9, 0x1
         stb r9, 0(r10)
+
+check_audio:
+        /* Check audio (IRQ12)*/
+        andi r9, r8, 0x1000
+        beq r9, r0, end_exc
+        /* Fill the write FIFO again (128 samples, 75% empty,
+	 * therefore 96 samples can be added) */
+        /* r8 = max_samples, r9 = counter, r10 = addressval, r11 = address, 
+        r12 = AUDIO_ADDR, r13 = audio_cur, r14 = audio_end */
+        movi r9, 0
+        movi r8, 96
+        movia r12, AUDIO_ADDR
+        movia r11, audio_cur
+        ldw r13, 0(r11)
+        movia r11, audio_end
+        ldw r14, 0(r11)
+        movia r11, audio_channels
+        ldw r10, 0(r11)
+        beq r10, r0, fill_write_fifo_mono
+
+fill_write_fifo_stereo:
+        /* Load left sample */
+        ldw r10, 0(r13)
+        /* Pointer arithmetic */
+        addi r13, 4
+        /* Put it in the left channel */
+        stwio r10, 8(r12)
+        /* Load right sample */
+        ldw r10, 0(r13)
+        addi r4, 4
+        /* Put it in the right channel */
+        stwio r10, 12(r12)
+        /* Increment the counter */
+        addi r9, 1
+        bge r13, r14, end_play /* Ran out of audio data */
+        blt r9, r8, fill_write_fifo_stereo
+
+        br end_exc
+
+fill_write_fifo_mono:
+
+        /* Load sample */
+        ldw r10, 0(r13)
+        /* Pointer arithmetic */
+        addi r13, 4
+        /* Put it in both channels */
+        stwio r10, 8(r12)
+        stwio r10, 12(r12)
+        /* Increment the counter */
+        addi r9, 1
+        bge r13, r14, end_play /* Ran out of audio data */
+        blt r9, r8, fill_write_fifo_stereo
+
+        br end_exc
+
+end_play:
+        movi r8, AUDIO_DISABLE
+        /* Disable the interrupt on the device */
+        stwio r8, 0(r12)
+        /* We're not going to worry about disabling the interrupt on the system */
         
 end_exc:
         /* Restore registers */
@@ -100,10 +166,13 @@ end_exc:
         ldw r9, 4(sp)
         ldw r10, 8(sp)
         ldw r11, 12(sp)
+        ldw r12, 16(sp)
+        ldw r13, 20(sp)
+        ldw r14, 24(sp)
         addi sp, sp, INTERRUPT_STACK
         subi ea, ea, 4
         eret
-        
+
         .text
         .global init_keyboard
 
