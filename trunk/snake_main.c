@@ -92,6 +92,14 @@ int init_keyboard();
 /* Written using timer */
 void init_timer(int address, int period);
 
+/* Written using the audio CODEC */
+int playwav(int *wavfile);
+
+/* Global pointer to the current location of the audio file we're playing */
+int *audio_cur;
+int *audio_end;
+int *audio_channels; /* num_channels -1 */
+
 /* Functions that really should be moved to a header file */
 void game_over();
 

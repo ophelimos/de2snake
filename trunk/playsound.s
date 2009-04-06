@@ -40,36 +40,18 @@
 	r31 ra
 	*/
 
-        .equ AUDIO_ADDR, 0xff11160
+        .equ AUDIO_ADDR, 0xff1160
         .equ AUDIO_ENABLE, 0x1 /* Enable  */
 
         .text
-        .global init_timer
+        .global playwav
 
-init_timer:
-        /* Clock init */
-        /* Set up the clock period */
-        stwio r5, 8(r4)
-        srli r5, r5, 16
-        stwio r5, 12(r4)
-        movi r12, TIMER_START
-
-        /* Start timer, and enable timer interrupts at the same time */
-        stwio r12, 4(r4)
-
-        /* Enable IRQ (line 3 for timer0, line 4 for timer1) */
-        /* Only timer0 for now */
-#        movia r9, TIMER_ADDR
-#        beq r4, r9, timer0*/
-timer0: /* line 3 */
-        rdctl r8, ctl3
-        ori r8, r8, 0x8
-        wrctl ctl3, r8
-#        br end
-#timer1: /* line 4 */
-#        rdctl r8, ctl3
-#        ori r8, r8, 0x10
-#        wrctl ctl3, r8
-end:
-        ret
+playwav:
         
+
+        
+        /* Enable IRQ (line 12) */
+timer0: /* line 12 */
+        rdctl r8, ctl3
+        ori r8, r8, 0x1000 /* Not SE */
+        wrctl ctl3, r8
