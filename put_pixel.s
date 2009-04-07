@@ -1,5 +1,5 @@
-/*Writes colour to VGA, given inputs x, y, and colour, respectively stored
-in registers r5, r6, and r7*/
+/* Writes colour to VGA, given inputs x, y, and colour, respectively stored
+in registers r4, r5, and r6 */
 
 
 
@@ -35,6 +35,6 @@ offset:
         add r2, r2, r3
         stwio r6,0(r2)
         
-  after:
+after:
         ret
         

@@ -8,12 +8,18 @@
 #define DOWN 4
 #define MAX_FOOD 500
 #define SCORE_LENGTH 100
-#define MAX_X 1000
-#define MAX_Y 1000
 #define SCREEN_X 160
 #define SCREEN_Y 120
 #define BORDER_WIDTH 15
 #define GROWTH_RATE 5
+#define MAX_BENDS 1000
+
+/* Snake parameters */
+#define SNAKE_LENGTH 20
+#define START_X 25
+#define START_Y 25
+#define START_DIR RIGHT
+
 
  /* Colour codes:
  
@@ -36,7 +42,7 @@
 #define YELLOW 6
 #define WHITE 7
 
-#define BKGND_COL 0
+#define BKGND_COL 1
 #define SNAKE_COL 6
 #define FOOD_COL 4
 #define BORDER_COL 7
@@ -55,9 +61,9 @@ int head_dir; // Stores Head Direction
 int tail_x; // Stores Tail X Coordinat
 int tail_y; // Stores Tail Y Coordinat
 int tail_dir; // Stores Tail Direction
-int bend_x [MAX_X]; //Stores X Bend Coordinate Declare it big enough to accomodate maximum bends
-int bend_y [MAX_Y];
-int bend_dir [MAX_X]; // Stores Bend direction when tail reaches that X Coordinate
+int bend_x [MAX_BENDS]; //Stores X Bend Coordinate Declare it big enough to accomodate maximum bends
+int bend_y [MAX_BENDS];
+int bend_dir [MAX_BENDS]; // Stores Bend direction when tail reaches that X Coordinate
 } Snake_Data;
 
 /* Declare a global Snake_Data structure */
@@ -83,7 +89,7 @@ int randomvalue (int starting, int ending); // Return a random int value between
 /* Written using VGA adapter */
 int get_pixel (int x, int y);
 int put_pixel (int x, int y, int color);
-void init_vga();
+void init_vga(int color);
 
 /* Written using keyboard adapter */
 int getch();
@@ -177,31 +183,36 @@ void gamephysics ()
       //Increase the size of snake by GROWTH_RATE
       if (Snake.tail_dir == UP)
        {
-        for (i = 0; i<101;i++)
+        for (i = 0; i < GROWTH_RATE; i++)
         {
-            put_pixel (Snake.tail_x,Snake.tail_y+i,SNAKE_COL);
+            put_pixel (Snake.tail_x, Snake.tail_y+i, SNAKE_COL);
         }
          Snake.tail_y += GROWTH_RATE;
        }
       if (Snake.tail_dir == DOWN)
        {
-        for (i = 0; i<101;i++) put_pixel (Snake.tail_x,Snake.tail_y-i,SNAKE_COL);                  
-        Snake.tail_y -=100;
+        for (i = 0; i < GROWTH_RATE;i++)
+        {
+            put_pixel (Snake.tail_x, Snake.tail_y-i, SNAKE_COL);
+        }
+        Snake.tail_y -= GROWTH_RATE;
                
        }       
       if (Snake.tail_dir == LEFT)
        {
-        for (i = 0; i<101;i++)
-         put_pixel (Snake.tail_x+i,Snake.tail_y,SNAKE_COL);                  
-         Snake.tail_x +=100;
-       
+        for (i = 0; i < GROWTH_RATE; i++)
+        {
+            put_pixel (Snake.tail_x+i, Snake.tail_y, SNAKE_COL);
+        }
+         Snake.tail_x += GROWTH_RATE;
        }
       if (Snake.tail_dir == RIGHT)
        {
-        for (i = 0; i<101;i++)
-        put_pixel (Snake.tail_x-i,Snake.tail_y,SNAKE_COL);                  
-        Snake.tail_x -=100;
-       
+        for (i = 0; i < GROWTH_RATE; i++)
+        {
+            put_pixel (Snake.tail_x-i, Snake.tail_y, SNAKE_COL);
+        }
+        Snake.tail_x -= GROWTH_RATE;
        } 
          
     }
@@ -244,7 +255,7 @@ void userinput () //Process User Input and maps it into game
        //Change head direction based on logic
 
        static int i = 0;
-       if ( i > 1000) i = 0; // Makes the bend array a circular queue
+       if ( i > MAX_BENDS) i = 0; // Makes the bend array a circular queue
       
        if (input == LEFT && Snake.head_dir != RIGHT && Snake.head_dir != LEFT)
         {
@@ -281,7 +292,7 @@ void userinput () //Process User Input and maps it into game
      }
 
      static int j = 0;
-       if ( j > 1000) j = 0;
+       if ( j > MAX_BENDS) j = 0;
  
  //Code to change the y direction at respective time
   if (Snake.tail_x == Snake.bend_x [j] && Snake.tail_y == Snake.bend_y [j])
@@ -358,32 +369,33 @@ void gameengine ()//Soul of our game.
 
 void initscreen ( ) //Draws Initial Screen.
 {
-     int i;
-     char scorestring [100];
+    /* char scorestring [100]; */
      //Write Score on screen
-/*     sprintf (scorestring, "Score : %d", score); */
+     /* sprintf (scorestring, "Score : %d", score); */
      /* TODO: Score/text writing function */
      /* outtextxy (20,710, scorestring); */
-     //Draw Intial Snake Body
-     for (i = Snake.length; i>0;i--) //This part should be redesigned for change of code of initial values   
+     //Draw Initial Snake Body
+    int i;
+     for (i = 0; i <= Snake.length; i++) //This part should be redesigned for change of code of initial values   
      {
-      put_pixel (Snake.head_x-i,Snake.head_y,SNAKE_COL);     
+      put_pixel (Snake.head_x-i, Snake.head_y, SNAKE_COL);     
      }
  }
 
 void initgamedata ( ) //Snakes starting coordinate if you modify any one make sure also modify dependent values
 {
-  int i;
-  Snake.length = 10;
-  Snake.head_x = 20;
-  Snake.head_y = 20;
+  Snake.length = SNAKE_LENGTH;
+  Snake.head_x = START_X;
+  Snake.head_y = START_Y;
   Snake.head_dir = RIGHT;
   Snake.tail_x = Snake.head_x - Snake.length;
   Snake.tail_y = Snake.head_y;
   Snake.tail_dir = Snake.head_dir;
-  for (i = 0; i <1000;i++) // There is no bend initally
+  int i;
+  for (i = 0; i < MAX_BENDS; i++) // There is no bend initally
    {
         Snake.bend_x[i] = 0;
+        Snake.bend_y[i] = 0;
         Snake.bend_dir[i] = 0; 
    }
   score = 0;
@@ -407,7 +419,7 @@ void game_over(int code)
 int main ()
 {
  int error = init_keyboard();
- init_vga();
+ init_vga(BKGND_COL);
  initgamedata ();
  initscreen ();
  init_timer(TIMER0_ADDR, MOVE_PERIOD);
