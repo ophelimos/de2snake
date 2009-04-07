@@ -3,22 +3,20 @@ in registers r4, r5, and r6 */
 
 
 
- /* Colour codes:
- 
- Black = 0
- Blue = 1
- Green = 2
- Light blue = 3
- Red = 4
- Pink = 5
- Yellow = 6 
- White = 7
- */
+.equ BLACK, 0
+.equ BLUE, 1
+.equ GREEN, 2
+.equ LIGHT_BLUE, 3
+.equ RED, 4
+.equ PINK, 5
+.equ YELLOW, 6
+.equ WHITE, 7 
+.equ ADDR_VGA, 0xa00000
 
 .text
 .global put_pixel
 
-.equ ADDR_VGA, 0xa00000
+
 
 put_pixel: 
         /* Doesn't call anything, so we don't need to store ra */
