@@ -13,7 +13,7 @@ SETUPPATH=X:/ECE/MSL/NIOSII/shell_v2.4.2/setup
 NIOS2EDSPATH=${SOPC_KIT_NIOS2}
 CABLE=USB-Blaster[USB-0] 
 
-SRCS=snake_main.c getch.s init_keyboard.s randomvalue.s get_pixel.s put_pixel.s init_vga.s init_timer.s
+SRCS=reverse_game_over.s
 TARGET=prog
 
 SYMBOLNAME=yoursymbolname
