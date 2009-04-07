@@ -1,4 +1,4 @@
-/*Flushes the whole screen to one particular colour*/
+/* Flushes the whole screen to one particular colour, as given in r4 (first argument) */
 
 
 
@@ -35,7 +35,7 @@
   
   addi r16, r0, 0
   addi r17, r0, 0
-  addi r18, r0, 0
+  mov r18, r4
 
         /* i < 160 */
           addi r19, r0, 160

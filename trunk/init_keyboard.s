@@ -123,16 +123,16 @@ fill_write_fifo_stereo:
         /* Load left sample */
         ldw r10, 0(r13)
         /* Pointer arithmetic */
-        addi r13, 4
+        addi r13, r13, 4
         /* Put it in the left channel */
         stwio r10, 8(r12)
         /* Load right sample */
         ldw r10, 0(r13)
-        addi r4, 4
+        addi r4, r4, 4
         /* Put it in the right channel */
         stwio r10, 12(r12)
         /* Increment the counter */
-        addi r9, 1
+        addi r9, r9, 1
         bge r13, r14, end_play /* Ran out of audio data */
         blt r9, r8, fill_write_fifo_stereo
 
@@ -143,12 +143,12 @@ fill_write_fifo_mono:
         /* Load sample */
         ldw r10, 0(r13)
         /* Pointer arithmetic */
-        addi r13, 4
+        addi r13, r13, 4
         /* Put it in both channels */
         stwio r10, 8(r12)
         stwio r10, 12(r12)
         /* Increment the counter */
-        addi r9, 1
+        addi r9, r9, 1
         bge r13, r14, end_play /* Ran out of audio data */
         blt r9, r8, fill_write_fifo_stereo
 
