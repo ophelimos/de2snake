@@ -1,5 +1,14 @@
 /* Header Files */
 
+/* Wav file */
+/* #include "harppluck.h" */
+int harppluck[] = {0x49524646,0xd730000a,0x41574556,0x6d662074,
+0x00100000,0x00010002,0xbb800000,0xee000002,
+0x00040010,0x61667463,0x00040000,0x00000000,
+0x61646174,0xd700000a,0x00000000,0x00000000,
+0x00000000,0x00000000,0x00000000,0x00000000,
+0x00000000,0x00000000,0x00000000,0x00000000,
+                   0x00000000,0x00000000,0x00000000,0x00000000};
 
 /* Defined parameters */
 #define LEFT 1
@@ -10,16 +19,15 @@
 #define SCORE_LENGTH 100
 #define SCREEN_X 160
 #define SCREEN_Y 120
-#define BORDER_WIDTH 15
+#define BORDER_WIDTH 5
 #define GROWTH_RATE 5
 #define MAX_BENDS 1000
 
 /* Snake parameters */
 #define SNAKE_LENGTH 20
-#define START_X 25
-#define START_Y 25
+#define START_X 80
+#define START_Y 60
 #define START_DIR RIGHT
-
 
  /* Colour codes:
  
@@ -42,15 +50,17 @@
 #define YELLOW 6
 #define WHITE 7
 
-#define BKGND_COL 1
+#define BKGND_COL 0
 #define SNAKE_COL 6
 #define FOOD_COL 4
-#define BORDER_COL 7
+#define BORDER_COL 1
 
 /* Game Data */
 
 int score; //Keeps the count of game score
 int gamedelay; //Lower the game delay faster is the game speed.
+int head_bend = 0;
+int tail_bend = 0;
 
 typedef struct Snake_Data {
 
@@ -84,12 +94,13 @@ int TIMER_INT = 0;
 /* Functions we need to write */
 
 /* Written using RNG */
-int randomvalue (int starting, int ending); // Return a random int value between end and starting parameters
+int randomvalue (int starting, int ending); // Return a random int value between ending and starting parameters
 
 /* Written using VGA adapter */
 int get_pixel (int x, int y);
 int put_pixel (int x, int y, int color);
 void init_vga(int color);
+void draw_border(int start_x, int end_x, int start_y, int end_y, int color);
 
 /* Written using keyboard adapter */
 int getch();
@@ -101,13 +112,14 @@ void init_timer(int address, int period);
 /* Written using the audio CODEC */
 int playwav(int *wavfile);
 
+/* Written using LCD screen */
+void game_over(int code);
+void print_lcd(char *string);
+
 /* Global pointer to the current location of the audio file we're playing */
 int *audio_cur;
 int *audio_end;
 int *audio_channels; /* num_channels -1 */
-
-/* Functions that really should be moved to a header file */
-void game_over();
 
 void gamephysics ()
 {
@@ -172,14 +184,12 @@ void gamephysics ()
    
    if (futurepixel == FOOD_COL)//Food Eaten
     {
+        /* Play a sound */
+        playwav(harppluck);
        foodcount --; //Reduce count
        score++; //Increase Score
-       /* setcolor (0);//Rewrite Score 
-        setfillstyle (0,0); 
-       bar (11,701,1007, 735);
-       setcolor (4); */
-/*       sprintf (scorestring, "Score : %d", score); */
-       /* outtextxy (20,710, scorestring); */
+       sprintf (scorestring, "Score : %d", score);
+       print_lcd(scorestring);
       //Increase the size of snake by GROWTH_RATE
       if (Snake.tail_dir == UP)
        {
@@ -253,58 +263,56 @@ void userinput () //Process User Input and maps it into game
        else return;
        
        //Change head direction based on logic
-
-       static int i = 0;
-       if ( i > MAX_BENDS) i = 0; // Makes the bend array a circular queue
       
        if (input == LEFT && Snake.head_dir != RIGHT && Snake.head_dir != LEFT)
         {
           Snake.head_dir = LEFT;    
-          Snake.bend_x [i] = Snake.head_x;
-          Snake.bend_y [i] = Snake.head_y;
-          Snake.bend_dir [i] = LEFT;
-          i++;
+          Snake.bend_x [head_bend] = Snake.head_x;
+          Snake.bend_y [head_bend] = Snake.head_y;
+          Snake.bend_dir [head_bend] = LEFT;
+          head_bend++;
+          if ( head_bend > MAX_BENDS) head_bend = 0; // Makes the bend array a circular queue
         }    
        if (input == RIGHT && Snake.head_dir != LEFT && Snake.head_dir != RIGHT)
         {
           Snake.head_dir = RIGHT;
-          Snake.bend_x [i] = Snake.head_x;
-          Snake.bend_y [i] = Snake.head_y;
-          Snake.bend_dir [i] = RIGHT;
-          i++;        
+          Snake.bend_x [head_bend] = Snake.head_x;
+          Snake.bend_y [head_bend] = Snake.head_y;
+          Snake.bend_dir [head_bend] = RIGHT;
+          head_bend++;
+          if ( head_bend > MAX_BENDS) head_bend = 0; // Makes the bend array a circular queue
         }
        if (input == UP && Snake.head_dir != DOWN && Snake.head_dir != UP)
         {
           Snake.head_dir = UP;
-          Snake.bend_x [i] = Snake.head_x;
-          Snake.bend_y [i] = Snake.head_y;
-          Snake.bend_dir [i] = UP;
-           i++;        
+          Snake.bend_x [head_bend] = Snake.head_x;
+          Snake.bend_y [head_bend] = Snake.head_y;
+          Snake.bend_dir [head_bend] = UP;
+          head_bend++;
+          if ( head_bend > MAX_BENDS) head_bend = 0; // Makes the bend array a circular queue
         }
        if (input == DOWN && Snake.head_dir != UP && Snake.head_dir != DOWN)
         {
           Snake.head_dir = DOWN;       
-          Snake.bend_x [i] = Snake.head_x;
-          Snake.bend_y [i] = Snake.head_y;
-          Snake.bend_dir [i] = DOWN;
-          i++;        
+          Snake.bend_x [head_bend] = Snake.head_x;
+          Snake.bend_y [head_bend] = Snake.head_y;
+          Snake.bend_dir [head_bend] = DOWN;
+          head_bend++;
+          if ( head_bend > MAX_BENDS) head_bend = 0; // Makes the bend array a circular queue
         }     
      }
-
-     static int j = 0;
-       if ( j > MAX_BENDS) j = 0;
- 
- //Code to change the y direction at respective time
-  if (Snake.tail_x == Snake.bend_x [j] && Snake.tail_y == Snake.bend_y [j])
-   {
-      Snake.tail_dir = Snake.bend_dir [j];
-      j++;                
-   }
-  
 }
 
 void movesnake ()
 {
+    // Bend the tail
+    if (Snake.tail_x == Snake.bend_x [tail_bend] && Snake.tail_y == Snake.bend_y [tail_bend])
+    {
+      Snake.tail_dir = Snake.bend_dir [tail_bend];
+      tail_bend++;
+      if ( tail_bend > MAX_BENDS) tail_bend = 0;
+    }
+
    //Move the Head
    if (Snake.head_dir == LEFT)
    {
@@ -321,11 +329,10 @@ void movesnake ()
    if (Snake.head_dir == DOWN)  
    {
        Snake.head_y ++;               
-                      
    }  
    put_pixel (Snake.head_x, Snake.head_y, SNAKE_COL);
 
-//Move the Tail
+   //Move the Tail
    put_pixel (Snake.tail_x, Snake.tail_y, BKGND_COL);
    if (Snake.tail_dir == LEFT)
    {
@@ -342,10 +349,7 @@ void movesnake ()
    if (Snake.tail_dir == DOWN)  
    {
        Snake.tail_y ++;               
-                      
    }  
-  
-
 }
     
 void gameengine ()//Soul of our game.
@@ -369,17 +373,27 @@ void gameengine ()//Soul of our game.
 
 void initscreen ( ) //Draws Initial Screen.
 {
-    /* char scorestring [100]; */
-     //Write Score on screen
-     /* sprintf (scorestring, "Score : %d", score); */
-     /* TODO: Score/text writing function */
-     /* outtextxy (20,710, scorestring); */
+    char scorestring [100];
+     //Write Score on LCD
+     sprintf (scorestring, "Score : %d", score);
+     print_lcd(scorestring);
      //Draw Initial Snake Body
     int i;
      for (i = 0; i <= Snake.length; i++) //This part should be redesigned for change of code of initial values   
      {
       put_pixel (Snake.head_x-i, Snake.head_y, SNAKE_COL);     
      }
+     /* Draw some borders */
+     /* left */
+     draw_border(0, BORDER_WIDTH, 0, SCREEN_Y, BORDER_COL);
+     /* top */
+     draw_border(0, SCREEN_X, 0, BORDER_WIDTH, BORDER_COL);
+     /* right */
+     draw_border(SCREEN_X-BORDER_WIDTH, SCREEN_X, 0, SCREEN_Y, BORDER_COL);
+     /* bottom */
+     draw_border(0, SCREEN_X, SCREEN_Y-BORDER_WIDTH, SCREEN_Y, BORDER_COL);
+     
+     
  }
 
 void initgamedata ( ) //Snakes starting coordinate if you modify any one make sure also modify dependent values
@@ -401,7 +415,7 @@ void initgamedata ( ) //Snakes starting coordinate if you modify any one make su
   score = 0;
 }
 
-void game_over(int code)
+/*void game_over(int code)
 {
 	int i, j;
 	for (i = 0; i < SCREEN_X; i++)
@@ -413,6 +427,7 @@ void game_over(int code)
 	}
 	exit(code);
 }
+*/
 
 // Main Function
 

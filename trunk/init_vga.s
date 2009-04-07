@@ -1,7 +1,5 @@
 /* Flushes the whole screen to one particular colour, as given in r4 (first argument) */
 
-
-
  /* Colour codes:
  
  Black = 0

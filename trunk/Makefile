@@ -13,7 +13,7 @@ SETUPPATH=X:/ECE/MSL/NIOSII/shell_v2.4.2/setup
 NIOS2EDSPATH=${SOPC_KIT_NIOS2}
 CABLE=USB-Blaster[USB-0] 
 
-SRCS=reverse_game_over.s
+SRCS=snake_main.c get_pixel.s init_keyboard init_timer.s init_vga.s playwav.s put_pixel.s randomvalue.s reverse_game_over.s getch.s LCD_Function.s draw_border.s
 TARGET=prog
 
 SYMBOLNAME=yoursymbolname
@@ -112,5 +112,9 @@ help:
 	@echo
 	@echo Example 2.  I want to debug my program which is made of two files main.c foo.s
 	@echo '   Type: make SRCS="main.c foo.s" debug'
+
+# Used for emacs' flymake syntax checker
+#check-syntax:
+#	$(CC) -DCACHING_ON -Wall -Wextra -fsyntax-only $(CHK_SOURCES)
 
 .PHONY: disasm run configure de1configure clean gcc default debug help compile terminal test srec force findsymbol resetdebugger maketest terminal
