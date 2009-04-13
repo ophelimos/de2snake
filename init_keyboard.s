@@ -40,7 +40,7 @@
 	r30 ba
 	r31 ra
 	*/
-        
+        .equ PUSHBUTTON_ADDR, 0xff1090
         .equ PS2ADDR, 0xff1150
         .equ TIMER0_ADDR, 0xff1020
         .equ AUDIO_ADDR, 0xff1160
@@ -100,10 +100,15 @@ check_timer0:
         movi r9, 0x1
         stb r9, 0(r10)
 
+check_pushbuttons:
+	andi r9, r8, 0x20
+        beq r9, r0, end_exc
+	addi sp, sp, INTERRUPT_STACK
+
 check_audio:
         /* Check audio (IRQ12)*/
         andi r9, r8, 0x1000
-        beq r9, r0, end_exc
+        beq r9, r0, check_pushbuttons
         /* Fill the write FIFO again (128 samples, 75% empty,
 	 * therefore 96 samples can be added) */
         /* r8 = max_samples, r9 = counter, r10 = addressval, r11 = address, 
@@ -159,7 +164,7 @@ end_play:
         /* Disable the interrupt on the device */
         stwio r8, 0(r12)
         /* We're not going to worry about disabling the interrupt on the system */
-        
+		
 end_exc:
         /* Restore registers */
         ldw r8, 0(sp)
@@ -183,13 +188,19 @@ init_keyboard:
         movi r11, 0x55
         movi r12, 0xFA
 
+init_pushbuttons:
+		movia r13, PUSHBUTTON_ADDR
+		stwio r0, 12(r13) /* Clearing Edge Capture Register */ 
+		movia r14,0x1
+		stwio r14,8(r13)  /* Enable interrupts on push buttons 0 
+		
         /* Initialize keyboard interrupts */
         /* Device */
         movia r8, 0x1
         stwio r8, 4(r9)
         /* IRQ 11 */
         rdctl r8, ctl3
-        ori r8, r8, 0x800
+        ori r8, r8, 0x820
         wrctl ctl3, r8
         /* Globally */
         movi r8, 0x1
