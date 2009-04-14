@@ -66,8 +66,8 @@ White = 7
 
 int score; //Keeps the count of game score
 int gamedelay; //Lower the game delay faster is the game speed.
-int head_bend = 0;
-int tail_bend = 0;
+int head_bend;
+int tail_bend;
 
 typedef struct Snake_Data {
 
@@ -87,10 +87,15 @@ typedef struct Snake_Data {
 Snake_Data Snake;
 
 /* Global keyboard interrupt flag */
-int KEYBOARD_INT = 0;
+int KEYBOARD_INT;
 
 /* Global timer interrupt flag */
-int TIMER_INT = 0;
+int TIMER_INT;
+
+/* Forget static variables */
+int foodcount;
+int movedsnake;
+int hole_timeout;
 
 /* Timer parameters */
 #define TIMER0_ADDR 0xff1020
@@ -128,44 +133,84 @@ void print_lcd(char *string);
 /* Using pushbuttons */
 void init_pushbuttons();
 
+
+
 /* Global pointer to the current location of the audio file we're playing */
 int *audio_cur;
 int *audio_end;
 int *audio_channels; /* num_channels -1 */
 
+void make_food()
+{
+    int valid = 0;
+    int foodx;
+    int foody;
+    while (!valid)
+    {
+        foodx = randomvalue (BORDER_WIDTH,SCREEN_X - BORDER_WIDTH);
+        foody = randomvalue (BORDER_WIDTH,SCREEN_Y - BORDER_WIDTH);
+        int tmp = get_pixel (foodx,foody);
+        if (tmp == BKGND_COL)
+        {
+            put_pixel (foodx,foody,FOOD_COL);
+            foodcount++;            
+            valid = 1;           
+        }
+    }
+}
+
+void random_hole()
+{
+    /* Draw a random border somewhere (as an obstacle) */
+        int x1 = randomvalue(BORDER_WIDTH, SCREEN_X-BORDER_WIDTH);
+        int x2 = randomvalue(x1, SCREEN_X-BORDER_WIDTH);
+        int y1 = randomvalue(BORDER_WIDTH, SCREEN_Y-BORDER_WIDTH);
+        int y2 = randomvalue(y1, SCREEN_Y-BORDER_WIDTH);
+        /* No auto-kills */
+        if ( (Snake.head_x + 5) > x1 && (Snake.head_x - 5) < x2
+             && (Snake.head_y + 5)> y1 && (Snake.head_y -5) < y2)
+        {
+            return;
+        }
+        draw_border(x1, x2, y1, y2, BORDER_COL);
+}
+
 void gamephysics ()
 {
-    static int foodcount = 0;//Keep Count of food
     int futurex, futurey, futurepixel;
     int i;
     char scorestring [100];
-    //Adds a food if no food is present and up to MAX_FOOD, 20% of the time
-    if (foodcount < MAX_FOOD && randomvalue(0,10) < 2) 
+    //Adds a food if no food is present and up to MAX_FOOD, 1% of the time
+    if (foodcount < MAX_FOOD && randomvalue(0,100) < 1) 
     {
-        int valid = 0;
-        int foodx;
-        int foody;
-        while (!valid)
-        {
-            foodx = randomvalue (BORDER_WIDTH,SCREEN_X - BORDER_WIDTH);
-            foody = randomvalue (BORDER_WIDTH,SCREEN_Y - BORDER_WIDTH);
-            int tmp = get_pixel (foodx,foody);
-            if (tmp == BKGND_COL)
-            {
-                put_pixel (foodx,foody,FOOD_COL);
-                foodcount++;            
-                valid = 1;           
-            }
-        }          
-    } 
+        make_food();
+    }
+
+    /* Random hole generator */
+    if (randomvalue(0,1000) < 1)
+    {
+        random_hole();
+    }
+
+    /* Every 200 steps */
+    if (hole_timeout >= 200)
+    {
+        random_hole();
+        hole_timeout = 0;
+    }
+    else
+    {
+        hole_timeout++;
+    }
+    
     //Boundary Collision Check -
   
-    if (Snake.head_x <= BORDER_WIDTH || Snake.head_x >= SCREEN_X - BORDER_WIDTH 
+    /*if (Snake.head_x <= BORDER_WIDTH || Snake.head_x >= SCREEN_X - BORDER_WIDTH 
         || Snake.head_y <= BORDER_WIDTH || Snake.head_y >= SCREEN_Y - BORDER_WIDTH )
     {
         game_over(1);
     }
- 
+    */
     //Get future value of head in int variable futurex and futurey and calculate the logic
   
     futurex = Snake.head_x;
@@ -194,6 +239,8 @@ void gamephysics ()
     {
         /* Play a sound */
         playwav(harppluck);
+        /* Make another food */
+        make_food();
         foodcount --; //Reduce count
         score++; //Increase Score
         sprintf (scorestring, "Score : %d", score);
@@ -234,7 +281,7 @@ void gamephysics ()
         } 
          
     }
-    if (futurepixel == SNAKE_COL)
+    if (futurepixel == SNAKE_COL || futurepixel == BORDER_COL)
     {
         game_over(1);
     }
@@ -364,13 +411,15 @@ void gameengine ()//Soul of our game.
         if (TIMER_INT != 0)
         {
             TIMER_INT = 0;
+            gamephysics ();
             movesnake ();
-            gamephysics ();    
+            movedsnake = 1;
         }
-        if (KEYBOARD_INT != 0)
+        if (KEYBOARD_INT != 0 && movedsnake == 1)
         {
             /* A key's been pressed */
             userinput ();
+            movedsnake = 0;
         }
     }
 
@@ -398,12 +447,10 @@ void initscreen ( ) //Draws Initial Screen.
     /* bottom */
     draw_border(0, SCREEN_X, SCREEN_Y-BORDER_WIDTH, SCREEN_Y, BORDER_COL);
 
-    /* Draw a random border somewhere (as an obstacle) */
-    int x1 = randomvalue(BORDER_WIDTH, SCREEN_X-BORDER_WIDTH);
-    int x2 = randomvalue(x1, SCREEN_X-BORDER_WIDTH);
-    int y1 = randomvalue(BORDER_WIDTH, SCREEN_Y-BORDER_WIDTH);
-    int y2 = randomvalue(y1, SCREEN_Y-BORDER_WIDTH);
-    draw_border(x1, x2, y1, y2);
+    random_hole();
+
+    /* Make an initial food */
+    make_food();
 }
 
 void initgamedata ( ) //Snakes starting coordinate if you modify any one make sure also modify dependent values
@@ -443,11 +490,22 @@ void initgamedata ( ) //Snakes starting coordinate if you modify any one make su
 
 int main ()
 {
+    /* Reset variables, since we reset using pushbuttons */
+    head_bend = 0;
+    tail_bend = 0;
+    KEYBOARD_INT = 0;
+    TIMER_INT = 0;
+    foodcount = 0;//Keep Count of food
+    movedsnake = 0;
+    hole_timeout = 0;
+
+    /* Initialization functions */
     int error = init_keyboard();
     init_vga(BKGND_COL);
     initgamedata ();
     initscreen ();
     init_timer(TIMER0_ADDR, MOVE_PERIOD);
+    init_pushbuttons();
     gameengine (); 
     return 0;
 }
