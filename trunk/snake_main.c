@@ -125,6 +125,9 @@ int playwav(int *wavfile);
 void game_over(int code);
 void print_lcd(char *string);
 
+/* Using pushbuttons */
+void init_pushbuttons();
+
 /* Global pointer to the current location of the audio file we're playing */
 int *audio_cur;
 int *audio_end;

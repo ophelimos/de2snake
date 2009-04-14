@@ -40,6 +40,7 @@
 	r30 ba
 	r31 ra
 	*/
+        
         .equ PUSHBUTTON_ADDR, 0xff1090
         .equ PS2ADDR, 0xff1150
         .equ TIMER0_ADDR, 0xff1020
@@ -91,7 +92,7 @@ exception_handler:
 check_timer0:   
         /* Check timer0 (IRQ3)*/
         andi r9, r8, 0x8
-        beq r9, r0, check_audio
+        beq r9, r0, check_pushbuttons
         /* Acknowledge the interrupt (by clearing the timer) */
         movia r11, TIMER0_ADDR
         stwio r0, 0(r11)
@@ -101,9 +102,24 @@ check_timer0:
         stb r9, 0(r10)
 
 check_pushbuttons:
+        /* Check pushbuttons (IRQ 5) */
 	andi r9, r8, 0x20
         beq r9, r0, end_exc
-	addi sp, sp, INTERRUPT_STACK
+        /* Acknowledge the interrupt */
+        movia r11, PUSHBUTTON_ADDR
+       	stwio r0, 12(r11) /* Clearing Edge Capture Register */
+        /* Behave exactly as if we're ending the exception handler, except go to main */
+        ldw r8, 0(sp)
+        ldw r9, 4(sp)
+        ldw r10, 8(sp)
+        ldw r11, 12(sp)
+        ldw r12, 16(sp)
+        ldw r13, 20(sp)
+        ldw r14, 24(sp)
+        addi sp, sp, INTERRUPT_STACK
+        /* Move the address of main into ea, so we go there instead */
+        movia ea, main
+        eret
 
 check_audio:
         /* Check audio (IRQ12)*/
@@ -188,12 +204,6 @@ init_keyboard:
         movi r11, 0x55
         movi r12, 0xFA
 
-init_pushbuttons:
-		movia r13, PUSHBUTTON_ADDR
-		stwio r0, 12(r13) /* Clearing Edge Capture Register */ 
-		movia r14,0x1
-		stwio r14,8(r13)  /* Enable interrupts on push buttons 0 
-		
         /* Initialize keyboard interrupts */
         /* Device */
         movia r8, 0x1
