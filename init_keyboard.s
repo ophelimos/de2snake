@@ -104,8 +104,8 @@ check_timer0:
 check_pushbuttons:
         /* Check pushbuttons (IRQ 5) */
 	andi r9, r8, 0x20
-        beq r9, r0, end_exc
-        /* Acknowledge the interrupt */
+        beq r9, r0, check_audio
+        /* Acknowledge the interupt */
         movia r11, PUSHBUTTON_ADDR
        	stwio r0, 12(r11) /* Clearing Edge Capture Register */
         /* Behave exactly as if we're ending the exception handler, except go to main */
@@ -124,7 +124,7 @@ check_pushbuttons:
 check_audio:
         /* Check audio (IRQ12)*/
         andi r9, r8, 0x1000
-        beq r9, r0, check_pushbuttons
+        beq r9, r0, end_exc
         /* Fill the write FIFO again (128 samples, 75% empty,
 	 * therefore 96 samples can be added) */
         /* r8 = max_samples, r9 = counter, r10 = addressval, r11 = address, 
