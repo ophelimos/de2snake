@@ -1,0 +1,1 @@
+An implementation of the popular arcade game "snake" on a Nios II processor, as programmed into the DE2's Cyclone II FPGA.  Originally created for University of Toronto class project.
